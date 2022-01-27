@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Newtonsoft.Json.Linq;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
 
 namespace SmartTemplateProcessor
 {
@@ -21,35 +17,32 @@ namespace SmartTemplateProcessor
         /// <returns>Template processado com o objeto de contexto.</returns>
         public static string ProcessTemplate(string template, object contextObj)
         {
-            if (String.IsNullOrEmpty(template))
+            if (string.IsNullOrEmpty(template) || contextObj == null)
             {
-                return String.Empty;
+                return string.Empty;
             }
 
-            if (contextObj == null)
-            {
-                return String.Empty;
-            }
+            JObject contextObjJson = JObject.FromObject(contextObj ?? new object());
 
-            JObject jObject = JObject.FromObject(contextObj ?? new object());
-
-            return Regex.Replace(template, @"\{\{([\w\.]+)\}\}", delegate(Match match)
+            return Regex.Replace(template, @"\{\{([\w\.]+)\}\}", delegate (Match match)
             {
                 string group = match.Groups[1].ToString();
 
                 var value = group
                     .Split('.')
-                    .Aggregate((object)jObject, (a, b) =>
+                    .Aggregate((object)contextObjJson, (a, b) =>
                     {
                         var jObj = (JObject.Parse(a.ToString())) ?? a as JToken;
+
                         if (jObj != null)
                         {
                             return jObj[b];
                         }
+
                         return null;
                     });
 
-                return value != null ? (value.ToString()) : String.Empty;
+                return value != null ? (value.ToString()) : string.Empty;
             });
         }
     }
